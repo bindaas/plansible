@@ -1,0 +1,76 @@
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    aws_access_key: "YOUR_ACCESS_KEY"
+    aws_secret_key: "YOUR_SECRET_KEY"
+  tasks:
+
+      - name: Alter data type
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master-replica.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="ALTER TABLE pet MODIFY COLUMN id BIGINT(20) UNSIGNED"
+        register: stuff
+        check_mode: no
+        changed_when: False
+        ignore_errors: yes
+
+      - name: Drop index
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master-replica.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="DROP INDEX index_on_name on pet"
+        register: stuff
+        changed_when: False
+        ignore_errors: yes
+
+      - name: Add index
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master-replica.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="CREATE INDEX index_on_sex ON pet (sex)"
+        register: stuff
+        changed_when: False
+        ignore_errors: yes
+
+
+      - name: Drop column
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master-replica.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="ALTER TABLE pet DROP sex"
+        register: stuff
+        changed_when: False
+        ignore_errors: yes
+
+
+
+      - name: Add column
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master-replica.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="ALTER TABLE pet ADD COLUMN species VARCHAR(20)"
+        register: stuff
+        changed_when: False
+        ignore_errors: yes
+
+      - name: Partiion table
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master-replica.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="ALTER TABLE pet PARTITION BY HASH(id) PARTITIONS 8"
+        register: stuff
+        check_mode: no
+        changed_when: False
+        ignore_errors: yes
+
+      - name: Analyze
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master-replica.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="analyze table pet"
+        register: stuff
+        check_mode: no
+        changed_when: False
+        ignore_errors: yes

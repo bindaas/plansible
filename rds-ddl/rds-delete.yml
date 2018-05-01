@@ -1,0 +1,28 @@
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    aws_access_key: "YOUR_ACCESS_KEY"
+    aws_secret_key: "YOUR_SECRET_KEY"
+  tasks:
+
+# Add or change a parameter group
+
+      - name: Delete event subscriptions
+        command: aws rds delete-event-subscription --region us-east-2 --subscription-name rds-replica-events-subscription --output text
+        ignore_errors: yes
+
+      - name: Delete RDS Replica
+        command: aws --region us-east-2 rds delete-db-instance --db-instance-identifier ddl-master-replica --skip-final-snapshot  --output text
+        ignore_errors: yes
+
+      - name: Delete RDS Master
+        command: aws --region us-east-2 rds delete-db-instance --db-instance-identifier ddl-master --skip-final-snapshot --output text
+        ignore_errors: yes
+
+      - name: Delete RDS Param
+        command: aws --region us-east-2 rds delete-db-parameter-group --db-parameter-group-name param-replica-writable --output text
+        ignore_errors: yes
+
+      - name: Delete SNS
+        command: aws sns delete-topic  --region us-east-2   --topic-arn arn:aws:sns:us-east-2:655041160302:RDS-replication-alarms --output text

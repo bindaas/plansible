@@ -1,0 +1,53 @@
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    aws_access_key: "YOUR_ACCESS_KEY"
+    aws_secret_key: "YOUR_SECRET_KEY"
+  tasks:
+      - name: create RDS instance
+        rds:
+         aws_access_key: "{{ aws_access_key }}"
+         aws_secret_key: "{{ aws_secret_key }}"
+         command: create
+         instance_name: ddl-master
+         db_engine: MySQL
+         instance_type: db.t2.micro
+         size: 20
+         username: dev
+         password: Insecure0
+         region: us-east-2
+         wait: yes
+         wait_timeout: 1200
+         tags:
+           Environment: testing
+           Application: testing
+        register: group
+
+      - name: Create database
+        command: >
+            mysql --user=dev --password=Insecure0
+            --host=ddl-master.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="CREATE DATABASE rdsddl"
+        register: stuff
+        check_mode: no
+        changed_when: False
+
+
+      - name: Create table
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="CREATE TABLE pet (id int(11)  ,name VARCHAR(20), owner VARCHAR(20), sex CHAR(1), birth DATE, death DATE)"
+        register: stuff
+        check_mode: no
+        changed_when: False
+
+      - name: Create index
+        command: >
+            mysql --user=dev --password=Insecure0 rdsddl
+            --host=ddl-master.cbqampkfvtnu.us-east-2.rds.amazonaws.com
+            --execute="CREATE INDEX index_on_name ON pet (name(10))"
+        register: stuff
+        check_mode: no
+        changed_when: False

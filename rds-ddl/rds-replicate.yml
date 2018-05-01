@@ -1,0 +1,71 @@
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    aws_access_key: "YOUR_ACCESS_KEY"
+    aws_secret_key: "YOUR_SECRET_KEY"
+  tasks:
+
+# Add or change a parameter group
+      - name: Create RDS param
+        rds_param_group:
+          state: present
+          name: param-replica-writable
+          description: 'Make RDS read_only Replica writable'
+          engine: 'mysql5.6'
+          immediate: yes
+          region: us-east-2
+          params:
+            read_only: 0
+
+      - name: create RDS replica
+        rds:
+         aws_access_key: "{{ aws_access_key }}"
+         aws_secret_key: "{{ aws_secret_key }}"
+         command: replicate
+         instance_name: ddl-master-replica
+         source_instance: ddl-master
+         region: us-east-2
+         wait: yes
+         wait_timeout: 1200
+
+      - name: Modify RDS replica
+        rds:
+         aws_access_key: "{{ aws_access_key }}"
+         aws_secret_key: "{{ aws_secret_key }}"
+         command: modify
+         instance_name: ddl-master-replica
+         parameter_group: param-replica-writable
+         region: us-east-2
+         apply_immediately: yes
+         wait: yes
+         wait_timeout: 1200
+
+      - name: Reboot RDS replica
+        rds:
+         aws_access_key: "{{ aws_access_key }}"
+         aws_secret_key: "{{ aws_secret_key }}"
+         command: reboot
+         instance_name: ddl-master-replica
+         region: us-east-2
+         wait: yes
+         wait_timeout: 1200
+
+      - name: Create alarm SNS topic
+        sns_topic:
+          name: "RDS-replication-alarms"
+          state: present
+          display_name: "RDS alarm SNS topic"
+          region: us-east-2
+          subscriptions:
+            - endpoint: "john.doe@example.com"
+              protocol: "email"
+
+      - name: Create event subscriptions
+        command: aws rds create-event-subscription    --region us-east-2   --subscription-name rds-replica-events-subscription   --sns-topic-arn arn:aws:sns:us-east-2:655041160302:RDS-replication-alarms  --enabled --output text
+
+      - name: Modify event subscriptions
+        command: aws rds modify-event-subscription  --region us-east-2     --subscription-name rds-replica-events-subscription --source-type db-instance --event-categories "read replica"  --output text
+
+      - name: Add source identifier to  event subscriptions
+        command: aws rds add-source-identifier-to-subscription      --region us-east-2     --subscription-name rds-replica-events-subscription  --source-identifier ddl-master-replica --output text

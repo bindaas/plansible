@@ -1,0 +1,39 @@
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    aws_access_key: "YOUR_ACCESS_KEY"
+    aws_secret_key: "YOUR_SECRET_KEY"
+  tasks:
+
+      - name: Delete RDS replica
+        rds:
+         aws_access_key: "{{ aws_access_key }}"
+         aws_secret_key: "{{ aws_secret_key }}"
+         command: delete
+         instance_name: ddl-master
+         region: us-east-2
+         wait: yes
+         wait_timeout: 1200
+
+      - name: Promote RDS replica
+        rds:
+         aws_access_key: "{{ aws_access_key }}"
+         aws_secret_key: "{{ aws_secret_key }}"
+         command: promote
+         instance_name: ddl-master-replica
+         region: us-east-2
+         wait: yes
+         wait_timeout: 1200
+
+      - name: Modify RDS endpoint
+        rds:
+         aws_access_key: "{{ aws_access_key }}"
+         aws_secret_key: "{{ aws_secret_key }}"
+         command: modify
+         instance_name: ddl-master-replica
+         new_instance_name: ddl-master
+         region: us-east-2
+         apply_immediately: yes
+         wait: yes
+         wait_timeout: 1200
